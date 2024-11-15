@@ -5,113 +5,132 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Load the textures (Wood, Bricks, and Metal)
-const textureLoader = new THREE.TextureLoader();
-const woodTexture = textureLoader.load('assets/textures/Wood092.png');
-const brickTexture = textureLoader.load('assets/textures/Bricks094.png');
-const metalTexture = textureLoader.load('assets/textures/Metal049A.png');
+// Create a material that reacts to light for the walls
+const greyMaterial = new THREE.MeshStandardMaterial({ 
+  color: 0x808080,  // Grey color
+  roughness: 0.7,  // Slightly rough to show lighting interaction
+  metalness: 0.5   // Slight metalness for light reflection
+});
 
-// Ensure textures have transparency (if needed for circular textures)
-woodTexture.wrapS = THREE.RepeatWrapping;
-woodTexture.wrapT = THREE.RepeatWrapping;
-woodTexture.repeat.set(1, 1);  // Don't stretch the texture
+// Create the geometry for the walls (a large rectangular shape)
+const wallWidth = 100;  // Width of each wall
+const wallHeight = 50;  // Height of the wall
+const wallGeometry = new THREE.PlaneGeometry(wallWidth, wallHeight);  // Plane for the wall
 
-brickTexture.wrapS = THREE.RepeatWrapping;
-brickTexture.wrapT = THREE.RepeatWrapping;
-brickTexture.repeat.set(1, 1);
+// Create the walls and apply the gray material
+const leftWall = new THREE.Mesh(wallGeometry, greyMaterial);
+leftWall.position.x = -50;  // Position it to the left
+leftWall.rotation.y = Math.PI / 2;  // Rotate to face the camera
+scene.add(leftWall);
 
-metalTexture.wrapS = THREE.RepeatWrapping;
-metalTexture.wrapT = THREE.RepeatWrapping;
-metalTexture.repeat.set(1, 1);
+const middleWall = new THREE.Mesh(wallGeometry, greyMaterial);
+middleWall.position.z = -50;  // Move it back to the center
+scene.add(middleWall);
 
-// Set the textures to be transparent (if needed)
-woodTexture.transparent = true;
-brickTexture.transparent = true;
-metalTexture.transparent = true;
+const rightWall = new THREE.Mesh(wallGeometry, greyMaterial);
+rightWall.position.x = 50;  // Position it to the right
+rightWall.rotation.y = -Math.PI / 2;  // Rotate to face the camera
+scene.add(rightWall);
 
-// Create sphere geometries (radius = 2 for better fit of textures)
-const sphereGeometry = new THREE.SphereBufferGeometry(2, 64, 64);  // Smooth geometry for texture mapping
+// Add front and back walls to enclose the room
+const frontWall = new THREE.Mesh(wallGeometry, greyMaterial);
+frontWall.position.z = 50;  // Position it to the front
+scene.add(frontWall);
 
-// Use MeshStandardMaterial for better shading
-const woodMaterial = new THREE.MeshStandardMaterial({ map: woodTexture, transparent: true });
-const brickMaterial = new THREE.MeshStandardMaterial({ map: brickTexture, transparent: true });
-const metalMaterial = new THREE.MeshStandardMaterial({ map: metalTexture, transparent: true });
+const backWall = new THREE.Mesh(wallGeometry, greyMaterial);
+backWall.position.z = -50;  // Position it at the back
+backWall.rotation.y = Math.PI;  // Rotate to face the other direction
+scene.add(backWall);
 
-// Create meshes for each sphere
-const woodSphere = new THREE.Mesh(sphereGeometry, woodMaterial);
-const brickSphere = new THREE.Mesh(sphereGeometry, brickMaterial);
-const metalSphere = new THREE.Mesh(sphereGeometry, metalMaterial);
+// Add a ceiling to the room
+const ceilingGeometry = new THREE.PlaneGeometry(100, 100);
+const ceilingMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.7, metalness: 0.2 });
+const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+ceiling.rotation.x = Math.PI / 2;  // Rotate to lay flat on the top
+ceiling.position.y = 25;  // Position it at the top
+scene.add(ceiling);
 
-// Position the spheres with space between them
-woodSphere.position.set(-4, 0, 0);
-brickSphere.position.set(0, 0, 0);
-metalSphere.position.set(4, 0, 0);
+// Add a floor to simulate the ground of the room
+const floorGeometry = new THREE.PlaneGeometry(100, 100);  // Large floor to cover the room
+const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.7, metalness: 0.2 });
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;  // Rotate to lay flat on the ground
+floor.position.y = -2;  // Position it slightly below the walls
+scene.add(floor);
 
-// Add spheres to the scene
-scene.add(woodSphere);
-scene.add(brickSphere);
-scene.add(metalSphere);
-
-// Add ambient light to softly illuminate the room
-const ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Soft ambient light (darker)
+// Lighting setup: Adding light sources that affect textures
+// 1. Ambient Light: Soft light that evenly illuminates the scene
+const ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Soft ambient light
 scene.add(ambientLight);
 
-// Add directional light to simulate light coming from above (like ceiling light)
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);  // Directional light (like sunlight)
+// 2. Directional Light: Simulates sunlight, casting shadows
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(10, 10, 10).normalize();
 scene.add(directionalLight);
 
-// Add point light to create a more room-like atmosphere
-const pointLight = new THREE.PointLight(0xffffff, 0.8, 100);  // Point light for more focus on objects
-pointLight.position.set(0, 5, 10);  // Light source above the center
+// 3. Point Light: A moving point light that emits light in all directions
+const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+pointLight.position.set(10, 5, 10);
 scene.add(pointLight);
 
-// Add a floor to simulate the ground of the room
-const floorGeometry = new THREE.PlaneGeometry(100, 100);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5 });
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = - Math.PI / 2;  // Rotate to lay flat on the ground
-floor.position.y = -2;  // Position it below the spheres
-scene.add(floor);
+// Set background color to improve texture visibility
+scene.background = new THREE.Color(0xaaaaaa);  // Light gray background
 
-// Add walls to simulate the room boundaries
-const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.7 });
-
-// Back Wall
-const backWallGeometry = new THREE.PlaneGeometry(100, 50);
-const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
-backWall.position.z = -50;
-backWall.rotation.y = Math.PI;
-scene.add(backWall);
-
-// Left Wall
-const leftWallGeometry = new THREE.PlaneGeometry(50, 50);
-const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
-leftWall.position.x = -50;
-leftWall.rotation.y = Math.PI / 2;
-scene.add(leftWall);
-
-// Right Wall
-const rightWallGeometry = new THREE.PlaneGeometry(50, 50);
-const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
-rightWall.position.x = 50;
-rightWall.rotation.y = -Math.PI / 2;
-scene.add(rightWall);
-
-// Set background color for better visibility of the textures
-scene.background = new THREE.Color(0xaaaaaa);  // Light gray background to simulate room lighting
-
-// Set the camera position to see the entire scene
+// Set camera position to view the room
 camera.position.set(0, 5, 15);
 
-// Animation loop to rotate the spheres and render the scene
+// Load textures for the balls
+const textureLoader = new THREE.TextureLoader();
+const woodTexture = textureLoader.load('assets/textures/Wood092.png');  // Wood texture
+const brickTexture = textureLoader.load('assets/textures/Bricks094.png');  // Brick texture
+const metalTexture = textureLoader.load('assets/textures/Metal049A.png');  // Metal texture
+
+// Use MeshStandardMaterial for realistic lighting effects
+const woodMaterial = new THREE.MeshStandardMaterial({ map: woodTexture });
+const brickMaterial = new THREE.MeshStandardMaterial({ map: brickTexture });
+const metalMaterial = new THREE.MeshStandardMaterial({ map: metalTexture });
+
+// Create balls (spheres) and place them randomly (close, medium, far)
+const sphereGeometry = new THREE.SphereGeometry(3, 32, 32);  // Small spheres
+
+// Ball 1 (Close to camera) with wood texture
+const closeBall = new THREE.Mesh(sphereGeometry, woodMaterial);
+closeBall.position.set(5, 1, -5);  // Close ball
+closeBall.rotation.y = Math.PI / 1;  // Slight rotation to hide texture on the back
+scene.add(closeBall);
+
+// Ball 2 (Medium distance) with brick texture
+const mediumBall = new THREE.Mesh(sphereGeometry, brickMaterial);
+mediumBall.position.set(-20, 5, -30);  // Medium ball
+mediumBall.rotation.y = Math.PI / 6;  // Slight rotation to hide texture on the back
+scene.add(mediumBall);
+
+// Ball 3 (Far distance) with metal texture
+const farBall = new THREE.Mesh(sphereGeometry, metalMaterial);
+farBall.position.set(0, 3, -50);  // Far ball
+farBall.rotation.y = Math.PI / 3;  // Slight rotation to hide texture on the back
+scene.add(farBall);
+
+// Function to make the balls always face the camera
+function updateBallOrientation() {
+  // Make the balls face the camera (billboarding)
+  closeBall.lookAt(-100, 0, 0);
+  mediumBall.lookAt(-100, 0, 0);
+  farBall.lookAt(-100, 0, 0);
+}
+
+// Animation loop to move the point light around
+let angle = 0;  // Used to animate the point light around the room
+
 function animate() {
   requestAnimationFrame(animate);
 
-  // Rotate the spheres for a dynamic effect
-  woodSphere.rotation.y += 0.01;
-  brickSphere.rotation.y += 0.01;
-  metalSphere.rotation.y += 0.01;
+  // Animate the point light moving in a circular path
+  angle += 0.01;
+  pointLight.position.set(30 * Math.cos(angle), 5, 30 * Math.sin(angle));
+
+  // Update the orientation of the balls to always face the camera
+  updateBallOrientation();
 
   // Render the scene from the camera's perspective
   renderer.render(scene, camera);
